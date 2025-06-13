@@ -1,0 +1,288 @@
+# Global configuration
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""
+  
+# Namespace configuration
+namespace:
+  create: true
+  name: grimoirelab
+
+# Image pull policy
+image:
+  pullPolicy: IfNotPresent
+
+# Service Account
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# RBAC
+rbac:
+  create: true
+
+# Network Policies
+networkPolicy:
+  enabled: true
+  ingress: []
+  egress: []
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  hosts:
+    - host: grimoirelab.local
+      paths:
+        - path: /
+          pathType: Prefix
+          service: kibiter
+        - path: /api
+          pathType: Prefix
+          service: arthur
+  tls: []
+
+# Elasticsearch configuration
+elasticsearch:
+  enabled: true
+  image:
+    repository: docker.elastic.co/elasticsearch/elasticsearch
+    tag: "7.17.0"
+  replicas: 3
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "1000m"
+    limits:
+      memory: "4Gi"
+      cpu: "2000m"
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClass: ""
+  config:
+    cluster.name: "grimoirelab-es"
+    network.host: "0.0.0.0"
+    discovery.type: "zen"
+    cluster.initial_master_nodes: "elasticsearch-0,elasticsearch-1,elasticsearch-2"
+    xpack.security.enabled: false
+  service:
+    type: ClusterIP
+    port: 9200
+  javaOpts: "-Xms1g -Xmx1g"
+
+# MariaDB configuration
+mariadb:
+  enabled: true
+  image:
+    repository: mariadb
+    tag: "10.6"
+  replicas: 1
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+  auth:
+    rootPassword: "grimoirelab-root"
+    database: "grimoirelab"
+    username: "grimoirelab"
+    password: "grimoirelab-pass"
+  config:
+    maxConnections: 200
+  service:
+    type: ClusterIP
+    port: 3306
+
+# Redis configuration
+redis:
+  enabled: true
+  image:
+    repository: redis
+    tag: "6.2-alpine"
+  replicas: 1
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: ""
+  auth:
+    password: "redis-pass"
+  service:
+    type: ClusterIP
+    port: 6379
+
+# Perceval configuration
+perceval:
+  enabled: true
+  image:
+    repository: grimoirelab/perceval
+    tag: "latest"
+  replicas: 2
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  config:
+    logLevel: "INFO"
+    backends: "git,github,jira"
+  secrets:
+    githubToken: ""
+    jiraUsername: ""
+    jiraPassword: ""
+  service:
+    type: ClusterIP
+    port: 8000
+
+# Arthur configuration
+arthur:
+  enabled: true
+  image:
+    repository: grimoirelab/arthur
+    tag: "latest"
+  replicas: 2
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+  config:
+    logLevel: "INFO"
+    maxJobs: 10
+    schedulerDelay: 60
+  secrets:
+    dbUser: "arthur"
+    dbPassword: "arthur-pass"
+  service:
+    type: ClusterIP
+    port: 8080
+
+# Graal configuration
+graal:
+  enabled: true
+  image:
+    repository: grimoirelab/graal
+    tag: "latest"
+  replicas: 1
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  config:
+    logLevel: "INFO"
+    analysisTypes: "lizard,cloc,cocom"
+  secrets:
+    dbUser: "graal"
+    dbPassword: "graal-pass"
+  service:
+    type: ClusterIP
+    port: 8081
+
+# SortingHat configuration
+sortinghat:
+  enabled: true
+  image:
+    repository: grimoirelab/sortinghat
+    tag: "latest"
+  replicas: 1
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+  config:
+    logLevel: "INFO"
+    autoProfile: true
+  secrets:
+    dbUser: "sortinghat"
+    dbPassword: "sortinghat-pass"
+    secretKey: "sortinghat-secret-key"
+  service:
+    type: ClusterIP
+    port: 8082
+
+# Sigils configuration
+sigils:
+  enabled: true
+  image:
+    repository: grimoirelab/sigils
+    tag: "latest"
+  replicas: 1
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  config:
+    logLevel: "INFO"
+  service:
+    type: ClusterIP
+    port: 5000
+
+# Kibiter configuration
+kibiter:
+  enabled: true
+  image:
+    repository: bitergia/kibiter
+    tag: "6.8.6"
+  replicas: 1
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  config:
+    elasticsearchUrl: "http://elasticsearch:9200"
+    serverHost: "0.0.0.0"
+    serverPort: 5601
+  service:
+    type: ClusterIP
+    port: 5601
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Monitoring and logging
+monitoring:
+  enabled: false
+  prometheus:
+    enabled: false
+  grafana:
+    enabled: false
+
+logging:
+  enabled: true
+  level: "INFO"
+  format: "json"
