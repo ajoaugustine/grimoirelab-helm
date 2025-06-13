@@ -1,0 +1,22 @@
+apiVersion: v2
+name: grimoirelab
+description: A Helm chart for GrimoireLab microservices architecture
+type: application
+version: 1.0.0
+appVersion: "latest"
+home: https://grimoirelab.github.io/
+icon: https://chaoss.github.io/grimoirelab/assets/logos/grimoirelab-logo.png
+sources:
+  - https://github.com/chaoss/grimoirelab
+maintainers:
+  - name: GrimoireLab Team
+    email: grimoirelab-discussions@lists.linuxfoundation.org
+keywords:
+  - analytics
+  - metrics
+  - software-development
+  - open-source
+  - chaoss
+annotations:
+  category: Analytics
+
