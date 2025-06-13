@@ -31,8 +31,6 @@ GrimoireLab is a toolkit for software development analytics that provides insigh
 - **Sigils** - Data visualization templates
 - **Kibiter** - Customized Kibana for analytics
 
-## ⚡ Quick Start
-
 ### Prerequisites
 
 - Kubernetes cluster (v1.19+)
