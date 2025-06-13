@@ -1,0 +1,29 @@
+{{- if .Values.graal.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "grimoirelab.fullname" . }}-graal-config
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "grimoirelab.labels" . | nindent 4 }}
+    app.kubernetes.io/component: graal
+data:
+  analysis-types: {{ .Values.graal.config.analysisTypes | quote }}
+  log-level: {{ .Values.graal.config.logLevel | quote }}
+  
+  # Graal configuration file
+  graal.cfg: |
+    [graal]
+    analysis_types = {{ .Values.graal.config.analysisTypes }}
+    
+    [database]
+    host = {{ include "grimoirelab.mariadb.host" . }}
+    port = {{ .Values.mariadb.service.port }}
+    
+    [elasticsearch]
+    url = http://{{ include "grimoirelab.elasticsearch.host" . }}:{{ .Values.elasticsearch.service.port }}
+    
+    [logging]
+    level = {{ .Values.graal.config.logLevel }}
+    format = %(asctime)s - %(name)s - %(levelname)s - %(message)s
+{{- end }}

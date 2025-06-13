@@ -1,0 +1,32 @@
+{{- if .Values.arthur.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "grimoirelab.fullname" . }}-arthur-config
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "grimoirelab.labels" . | nindent 4 }}
+    app.kubernetes.io/component: arthur
+data:
+  max-jobs: {{ .Values.arthur.config.maxJobs | quote }}
+  scheduler-delay: {{ .Values.arthur.config.schedulerDelay | quote }}
+  log-level: {{ .Values.arthur.config.logLevel | quote }}
+  
+  # Arthur configuration file
+  arthur.cfg: |
+    [arthur]
+    max_jobs = {{ .Values.arthur.config.maxJobs }}
+    scheduler_delay = {{ .Values.arthur.config.schedulerDelay }}
+    
+    [database]
+    host = {{ include "grimoirelab.mariadb.host" . }}
+    port = {{ .Values.mariadb.service.port }}
+    
+    [redis]
+    host = {{ include "grimoirelab.redis.host" . }}
+    port = {{ .Values.redis.service.port }}
+    
+    [logging]
+    level = {{ .Values.arthur.config.logLevel }}
+    format = %(asctime)s - %(name)s - %(levelname)s - %(message)s
+{{- end }}

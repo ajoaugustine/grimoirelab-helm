@@ -1,0 +1,35 @@
+{{- if .Values.elasticsearch.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "grimoirelab.fullname" . }}-elasticsearch-config
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "grimoirelab.labels" . | nindent 4 }}
+    app.kubernetes.io/component: elasticsearch
+data:
+  elasticsearch.yml: |
+    cluster.name: {{ index .Values.elasticsearch.config "cluster.name" | quote }}
+    network.host: {{ index .Values.elasticsearch.config "network.host" | quote }}
+    http.port: 9200
+    transport.tcp.port: 9300
+    
+    {{- if gt (.Values.elasticsearch.replicas | int) 1 }}
+    discovery.type: {{ index .Values.elasticsearch.config "discovery.type" | quote }}
+    cluster.initial_master_nodes: {{ index .Values.elasticsearch.config "cluster.initial_master_nodes" | quote }}
+    discovery.zen.ping.unicast.hosts: ["{{ include "grimoirelab.fullname" . }}-elasticsearch-headless"]
+    discovery.zen.minimum_master_nodes: {{ div .Values.elasticsearch.replicas 2 | add1 }}
+    {{- else }}
+    discovery.type: single-node
+    {{- end }}
+    
+    # Security settings
+    xpack.security.enabled: {{ index .Values.elasticsearch.config "xpack.security.enabled" }}
+    
+    # Performance settings
+    indices.query.bool.max_clause_count: 10000
+    search.max_buckets: 100000
+    
+    # JVM settings
+    bootstrap.memory_lock: false
+{{- end }}

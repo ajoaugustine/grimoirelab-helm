@@ -1,0 +1,22 @@
+{{- if .Values.sigils.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "grimoirelab.fullname" . }}-sigils-config
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "grimoirelab.labels" . | nindent 4 }}
+    app.kubernetes.io/component: sigils
+data:
+  log-level: {{ .Values.sigils.config.logLevel | quote }}
+  
+  # Sigils configuration file
+  sigils.cfg: |
+    [sigils]
+    host = 0.0.0.0
+    port = 5000
+    
+    [logging]
+    level = {{ .Values.sigils.config.logLevel }}
+    format = %(asctime)s - %(name)s - %(levelname)s - %(message)s
+{{- end }}

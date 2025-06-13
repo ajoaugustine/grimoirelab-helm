@@ -1,0 +1,39 @@
+{{- if .Values.elasticsearch.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "grimoirelab.fullname" . }}-elasticsearch
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "grimoirelab.labels" . | nindent 4 }}
+    app.kubernetes.io/component: elasticsearch
+spec:
+  type: {{ .Values.elasticsearch.service.type }}
+  ports:
+    - port: {{ .Values.elasticsearch.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "grimoirelab.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: elasticsearch
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "grimoirelab.fullname" . }}-elasticsearch-headless
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "grimoirelab.labels" . | nindent 4 }}
+    app.kubernetes.io/component: elasticsearch
+spec:
+  clusterIP: None
+  ports:
+    - port: 9200
+      name: http
+    - port: 9300
+      name: transport
+  selector:
+    {{- include "grimoirelab.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: elasticsearch
+{{- end }}

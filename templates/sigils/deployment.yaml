@@ -1,0 +1,63 @@
+{{- if .Values.sigils.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "grimoirelab.fullname" . }}-sigils
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "grimoirelab.labels" . | nindent 4 }}
+    app.kubernetes.io/component: sigils
+spec:
+  replicas: {{ .Values.sigils.replicas }}
+  selector:
+    matchLabels:
+      {{- include "grimoirelab.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: sigils
+  template:
+    metadata:
+      labels:
+        {{- include "grimoirelab.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: sigils
+    spec:
+      serviceAccountName: {{ include "grimoirelab.serviceAccountName" . }}
+      containers:
+        - name: sigils
+          image: {{ include "grimoirelab.image" (dict "global" .Values.global "repository" .Values.sigils.image.repository "tag" .Values.sigils.image.tag) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 5000
+              protocol: TCP
+          env:
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "grimoirelab.fullname" . }}-config
+                  key: log-level
+            - name: FLASK_APP
+              value: "sigils"
+            - name: FLASK_ENV
+              value: "production"
+            - name: SERVER_HOST
+              value: "0.0.0.0"
+            - name: SERVER_PORT
+              value: "5000"
+          resources:
+            {{- toYaml .Values.sigils.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+{{- end }}

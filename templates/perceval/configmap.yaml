@@ -1,0 +1,25 @@
+{{- if .Values.perceval.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "grimoirelab.fullname" . }}-perceval-config
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "grimoirelab.labels" . | nindent 4 }}
+    app.kubernetes.io/component: perceval
+data:
+  backends: {{ .Values.perceval.config.backends | quote }}
+  log-level: {{ .Values.perceval.config.logLevel | quote }}
+  
+  # Perceval configuration file
+  setup.cfg: |
+    [perceval]
+    backends = {{ .Values.perceval.config.backends }}
+    
+    [elasticsearch]
+    url = http://{{ include "grimoirelab.elasticsearch.host" . }}:{{ .Values.elasticsearch.service.port }}
+    
+    [logging]
+    level = {{ .Values.perceval.config.logLevel }}
+    format = %(asctime)s - %(name)s - %(levelname)s - %(message)s
+{{- end }}

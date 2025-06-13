@@ -1,0 +1,77 @@
+{{- if .Values.kibiter.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "grimoirelab.fullname" . }}-kibiter
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "grimoirelab.labels" . | nindent 4 }}
+    app.kubernetes.io/component: kibiter
+spec:
+  replicas: {{ .Values.kibiter.replicas }}
+  selector:
+    matchLabels:
+      {{- include "grimoirelab.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: kibiter
+  template:
+    metadata:
+      labels:
+        {{- include "grimoirelab.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: kibiter
+    spec:
+      serviceAccountName: {{ include "grimoirelab.serviceAccountName" . }}
+      initContainers:
+        {{- include "grimoirelab.waitForService" (dict "service" "elasticsearch" "host" (include "grimoirelab.elasticsearch.host" .) "port" .Values.elasticsearch.service.port) | nindent 8 }}
+      containers:
+        - name: kibiter
+          image: {{ include "grimoirelab.image" (dict "global" .Values.global "repository" .Values.kibiter.image.repository "tag" .Values.kibiter.image.tag) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 5601
+              protocol: TCP
+          env:
+            - name: ELASTICSEARCH_HOSTS
+              value: {{ .Values.kibiter.config.elasticsearchUrl | quote }}
+            - name: SERVER_HOST
+              value: {{ .Values.kibiter.config.serverHost | quote }}
+            - name: SERVER_PORT
+              value: {{ .Values.kibiter.config.serverPort | quote }}
+            - name: SERVER_BASEPATH
+              value: ""
+            - name: KIBANA_INDEX
+              value: ".kibana"
+            - name: LOGGING_DEST
+              value: "stdout"
+            - name: LOGGING_SILENT
+              value: "false"
+            - name: LOGGING_QUIET
+              value: "false"
+            - name: LOGGING_VERBOSE
+              value: "false"
+          resources:
+            {{- toYaml .Values.kibiter.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /usr/share/kibana/config
+          livenessProbe:
+            httpGet:
+              path: /api/status
+              port: http
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/status
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "grimoirelab.fullname" . }}-kibiter-config
+{{- end }}

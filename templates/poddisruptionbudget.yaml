@@ -1,0 +1,29 @@
+{{- if .Values.podDisruptionBudget.enabled }}
+{{- $components := list "elasticsearch" "arthur" "graal" "sortinghat" "sigils" "kibiter" }}
+{{- range $component := $components }}
+{{- $componentValues := index $.Values $component }}
+{{- if and $componentValues.enabled (gt ($componentValues.replicas | int) 1) }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "grimoirelab.fullname" $ }}-{{ $component }}-pdb
+  namespace: {{ $.Values.namespace.name }}
+  labels:
+    {{- include "grimoirelab.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $component }}
+spec:
+  {{- if $.Values.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ $.Values.podDisruptionBudget.minAvailable }}
+  {{- else if $.Values.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ $.Values.podDisruptionBudget.maxUnavailable }}
+  {{- else }}
+  minAvailable: 1
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "grimoirelab.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: {{ $component }}
+{{- end }}
+{{- end }}
+{{- end }}

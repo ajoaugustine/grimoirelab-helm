@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "grimoirelab.fullname" . }}-config
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "grimoirelab.labels" . | nindent 4 }}
+data:
+  # Global configuration
+  log-level: {{ .Values.logging.level | quote }}
+  log-format: {{ .Values.logging.format | quote }}
+  
+  # Service endpoints
+  elasticsearch-url: "http://{{ include "grimoirelab.elasticsearch.host" . }}:{{ .Values.elasticsearch.service.port }}"
+  mariadb-host: {{ include "grimoirelab.mariadb.host" . | quote }}
+  mariadb-port: {{ .Values.mariadb.service.port | quote }}
+  mariadb-database: {{ .Values.mariadb.auth.database | quote }}
+  redis-host: {{ include "grimoirelab.redis.host" . | quote }}
+  redis-port: {{ .Values.redis.service.port | quote }}
+  
+  # Application specific configs
+  arthur-max-jobs: {{ .Values.arthur.config.maxJobs | quote }}
+  arthur-scheduler-delay: {{ .Values.arthur.config.schedulerDelay | quote }}
+  
+  graal-analysis-types: {{ .Values.graal.config.analysisTypes | quote }}
+  
+  sortinghat-auto-profile: {{ .Values.sortinghat.config.autoProfile | quote }}
+  
+  perceval-backends: {{ .Values.perceval.config.backends | quote }}
+  
+  kibiter-server-host: {{ .Values.kibiter.config.serverHost | quote }}
+  kibiter-server-port: {{ .Values.kibiter.config.serverPort | quote }}

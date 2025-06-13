@@ -1,0 +1,26 @@
+{{- if .Values.sortinghat.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "grimoirelab.fullname" . }}-sortinghat-config
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "grimoirelab.labels" . | nindent 4 }}
+    app.kubernetes.io/component: sortinghat
+data:
+  auto-profile: {{ .Values.sortinghat.config.autoProfile | quote }}
+  log-level: {{ .Values.sortinghat.config.logLevel | quote }}
+  
+  # SortingHat configuration file
+  sortinghat.cfg: |
+    [sortinghat]
+    auto_profile = {{ .Values.sortinghat.config.autoProfile }}
+    
+    [database]
+    host = {{ include "grimoirelab.mariadb.host" . }}
+    port = {{ .Values.mariadb.service.port }}
+    
+    [logging]
+    level = {{ .Values.sortinghat.config.logLevel }}
+    format = %(asctime)s - %(name)s - %(levelname)s - %(message)s
+{{- end }}

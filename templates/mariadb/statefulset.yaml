@@ -1,0 +1,105 @@
+{{- if .Values.mariadb.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "grimoirelab.fullname" . }}-mariadb
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "grimoirelab.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mariadb
+spec:
+  serviceName: {{ include "grimoirelab.fullname" . }}-mariadb
+  replicas: {{ .Values.mariadb.replicas }}
+  selector:
+    matchLabels:
+      {{- include "grimoirelab.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: mariadb
+  template:
+    metadata:
+      labels:
+        {{- include "grimoirelab.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: mariadb
+    spec:
+      serviceAccountName: {{ include "grimoirelab.serviceAccountName" . }}
+      containers:
+        - name: mariadb
+          image: {{ include "grimoirelab.image" (dict "global" .Values.global "repository" .Values.mariadb.image.repository "tag" .Values.mariadb.image.tag) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: mysql
+              containerPort: 3306
+              protocol: TCP
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretRef:
+                  name: {{ include "grimoirelab.fullname" . }}-mariadb-secrets
+                  key: root-password
+            - name: MYSQL_DATABASE
+              value: {{ .Values.mariadb.auth.database | quote }}
+            - name: MYSQL_USER
+              valueFrom:
+                secretRef:
+                  name: {{ include "grimoirelab.fullname" . }}-mariadb-secrets
+                  key: username
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretRef:
+                  name: {{ include "grimoirelab.fullname" . }}-mariadb-secrets
+                  key: password
+          args:
+            - --max-connections={{ .Values.mariadb.config.maxConnections }}
+            - --innodb-buffer-pool-size=256M
+            - --character-set-server=utf8mb4
+            - --collation-server=utf8mb4_unicode_ci
+          resources:
+            {{- toYaml .Values.mariadb.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+            - name: config
+              mountPath: /etc/mysql/conf.d
+          livenessProbe:
+            exec:
+              command:
+                - mysqladmin
+                - ping
+                - -h
+                - localhost
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - mysqladmin
+                - ping
+                - -h
+                - localhost
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "grimoirelab.fullname" . }}-mariadb-config
+  {{- if .Values.mariadb.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if .Values.mariadb.persistence.storageClass }}
+        storageClassName: {{ .Values.mariadb.persistence.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.mariadb.persistence.size }}
+  {{- else }}
+      volumes:
+        - name: data
+          emptyDir: {}
+  {{- end }}
+{{- end }}

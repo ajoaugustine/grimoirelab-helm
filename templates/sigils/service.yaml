@@ -1,0 +1,20 @@
+{{- if .Values.sigils.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "grimoirelab.fullname" . }}-sigils
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "grimoirelab.labels" . | nindent 4 }}
+    app.kubernetes.io/component: sigils
+spec:
+  type: {{ .Values.sigils.service.type }}
+  ports:
+    - port: {{ .Values.sigils.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "grimoirelab.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: sigils
+{{- end }}

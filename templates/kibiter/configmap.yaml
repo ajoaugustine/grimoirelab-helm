@@ -1,0 +1,44 @@
+{{- if .Values.kibiter.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "grimoirelab.fullname" . }}-kibiter-config
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "grimoirelab.labels" . | nindent 4 }}
+    app.kubernetes.io/component: kibiter
+data:
+  kibana.yml: |
+    server.name: {{ include "grimoirelab.fullname" . }}-kibiter
+    server.host: {{ .Values.kibiter.config.serverHost | quote }}
+    server.port: {{ .Values.kibiter.config.serverPort }}
+    
+    elasticsearch.hosts: [{{ .Values.kibiter.config.elasticsearchUrl | quote }}]
+    elasticsearch.username: ""
+    elasticsearch.password: ""
+    
+    kibana.index: ".kibana"
+    kibana.defaultAppId: "dashboard"
+    
+    logging.dest: stdout
+    logging.silent: false
+    logging.quiet: false
+    logging.verbose: false
+    
+    ops.interval: 30000
+    
+    # Security settings
+    server.ssl.enabled: false
+    elasticsearch.ssl.verificationMode: none
+    
+    # Performance settings
+    elasticsearch.requestTimeout: 300000
+    elasticsearch.shardTimeout: 30000
+    
+    # UI settings
+    server.maxPayloadBytes: 1048576
+    
+    # Disable telemetry
+    telemetry.enabled: false
+    telemetry.optIn: false
+{{- end }}

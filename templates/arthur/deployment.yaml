@@ -1,0 +1,108 @@
+{{- if .Values.arthur.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "grimoirelab.fullname" . }}-arthur
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "grimoirelab.labels" . | nindent 4 }}
+    app.kubernetes.io/component: arthur
+spec:
+  replicas: {{ .Values.arthur.replicas }}
+  selector:
+    matchLabels:
+      {{- include "grimoirelab.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: arthur
+  template:
+    metadata:
+      labels:
+        {{- include "grimoirelab.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: arthur
+    spec:
+      serviceAccountName: {{ include "grimoirelab.serviceAccountName" . }}
+      initContainers:
+        {{- include "grimoirelab.waitForService" (dict "service" "mariadb" "host" (include "grimoirelab.mariadb.host" .) "port" .Values.mariadb.service.port) | nindent 8 }}
+        {{- include "grimoirelab.waitForService" (dict "service" "redis" "host" (include "grimoirelab.redis.host" .) "port" .Values.redis.service.port) | nindent 8 }}
+      containers:
+        - name: arthur
+          image: {{ include "grimoirelab.image" (dict "global" .Values.global "repository" .Values.arthur.image.repository "tag" .Values.arthur.image.tag) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "grimoirelab.fullname" . }}-config
+                  key: log-level
+            - name: ARTHUR_MAX_JOBS
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "grimoirelab.fullname" . }}-arthur-config
+                  key: max-jobs
+            - name: ARTHUR_SCHEDULER_DELAY
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "grimoirelab.fullname" . }}-arthur-config
+                  key: scheduler-delay
+            - name: DATABASE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "grimoirelab.fullname" . }}-config
+                  key: mariadb-host
+            - name: DATABASE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "grimoirelab.fullname" . }}-config
+                  key: mariadb-port
+            - name: DATABASE_NAME
+              valueFrom:
+                secretRef:
+                  name: {{ include "grimoirelab.fullname" . }}-arthur-dbcreds
+                  key: database
+            - name: DATABASE_USER
+              valueFrom:
+                secretRef:
+                  name: {{ include "grimoirelab.fullname" . }}-arthur-dbcreds
+                  key: username
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretRef:
+                  name: {{ include "grimoirelab.fullname" . }}-arthur-dbcreds
+                  key: password
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "grimoirelab.fullname" . }}-config
+                  key: redis-host
+            - name: REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "grimoirelab.fullname" . }}-config
+                  key: redis-port
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretRef:
+                  name: {{ include "grimoirelab.fullname" . }}-secrets
+                  key: redis-password
+          resources:
+            {{- toYaml .Values.arthur.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+{{- end }}
