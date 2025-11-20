@@ -37,7 +37,7 @@ GrimoireLab is a toolkit for software development analytics that provides insigh
 - Helm 3.x
 - kubectl configured
 - 8GB+ RAM and 4+ CPU cores
-- 50GB+ storage
+- 60GB+ storage
 
 ### One-Command Deployment
 
@@ -324,6 +324,7 @@ helm template grimoirelab . --values values-local.yaml --debug
 ## 📄 License
 
 This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
+
 
 ## 🔗 Links
 
